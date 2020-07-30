@@ -24,7 +24,6 @@
 　VisualStudio2019(C++)
 
 ●ファイル構成
-      .vs
 　　　EXE
       MyClass
       Project
