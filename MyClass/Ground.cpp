@@ -18,21 +18,21 @@ bool Ground::Initialize()
 	mtrl.Ambient = Color(0.25f, 0.25f, 0.25f);
 	
 	//床モデルの読み込み
-	ground_ = GraphicsDevice.CreateModelFromFile(_T("Ground/ground/Coliseum_model_2.X"));
-	ground_->SetScale(1.3f);
+	ground_ = GraphicsDevice.CreateModelFromFile(_T("Ground/ground/ground.X"));
+	ground_->SetScale(1.0f);
 	ground_->SetPosition(0, 0, 0);
 	ground_->SetMaterial(mtrl);
 
 	//壁ズリ判定用のモデルの読み込み
-	ground_wall_ = GraphicsDevice.CreateModelFromFile(_T("Ground/collision_wall/wall.X"));
-	ground_wall_->SetScale(1.0f);
-	ground_wall_->SetPosition(0, 0, 0);
+	collision_ground_wall_ = GraphicsDevice.CreateModelFromFile(_T("Ground/collision_wall/wall.X"));
+	collision_ground_wall_->SetScale(1.0f);
+	collision_ground_wall_->SetPosition(0, 0, 0);
 
 	////壁モデルの読み込み
-	ground_wall2_ = GraphicsDevice.CreateModelFromFile(_T("Ground/wall/Coliseum_model.X"));
-	ground_wall2_->SetScale(1.0f);
-	ground_wall2_->SetPosition(0, 0, 0); 
-	ground_wall2_->SetMaterial(mtrl);
+	ground_wall_ = GraphicsDevice.CreateModelFromFile(_T("Ground/wall/Coliseum_model.X"));
+	ground_wall_->SetScale(1.0f);
+	ground_wall_->SetPosition(0, 0, 0); 
+	ground_wall_->SetMaterial(mtrl);
 
 	return true;
 }

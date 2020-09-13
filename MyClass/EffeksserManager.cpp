@@ -19,7 +19,7 @@ bool EffeksserManager::Initialize(CameraMain& camara_, Player& player_)
 {                    	
 	Effekseer.Attach(GraphicsDevice);
 
-	//各エフェクトの読み込み
+	//各エフェクトの読み込み	
 	slash_effect_      = Effekseer.CreateEffectFromFile(_T("Effekseer/slash/slash.efk"));
 	dash_slash_effect_ = Effekseer.CreateEffectFromFile(_T("Effekseer/dash/dash.efk"));
 	death_blow_        = Effekseer.CreateEffectFromFile(_T("Effekseer/death_blow/death_blow.efk"));
@@ -40,6 +40,8 @@ void EffeksserManager::Update(CameraMain& camara_)
 {
 	Effekseer.Update();
 	Effekseer.SetCamera(camara_.GetCamera());
+
+	dash_ = dash_slash_effect_->GetPosition(dash_slash_effect_effect_ID);
 }
 
 /**
@@ -52,6 +54,7 @@ void EffeksserManager::SlashEffectPlay(Player& player)
 	slash_effect_->SetScale(slash_effect_effect_ID, kEffectAdjustScale);
 
 	Vector3 player_forward = player.GetPlayerModel()->GetFrontVector();
+	effect_dir_ = Vector3_Zero;
 	effect_dir_.y = MathHelper_ToRadians(-MathHelper_Atan2(player_forward.z, player_forward.x) - kEffectAdjustAngle);
 	slash_effect_->SetRotation(slash_effect_effect_ID, effect_dir_);
 }
@@ -63,8 +66,6 @@ void EffeksserManager::SlashEffectPlay(Player& player)
  */
 void EffeksserManager::HitEffectPlay(Player& player, Vector3& enemy_pos)
 {
-	
-	//int hit_effect_effect_ID = hit_effect_->Play(player.GetPlayerPos() + player.GetPlayerModel()->GetFrontVector() * kEffectAdjustPos);
     int hit_effect_effect_ID = hit_effect_->Play(enemy_pos);
 	hit_effect_->SetScale(hit_effect_effect_ID, kEffectAdjustScale);
 	Vector3 player_forward = player.GetPlayerModel()->GetFrontVector();
@@ -79,7 +80,7 @@ void EffeksserManager::HitEffectPlay(Player& player, Vector3& enemy_pos)
  */
 void EffeksserManager::DashSlashEffectPlay(Player& player)
 {
-	int dash_slash_effect_effect_ID = dash_slash_effect_->Play(player.GetPlayerPos() + player.GetPlayerModel()->GetFrontVector() * kEffectAdjustDashSlashPos);
+	dash_slash_effect_effect_ID = dash_slash_effect_->Play(player.GetPlayerPos());
 	dash_slash_effect_->SetScale(dash_slash_effect_effect_ID, kEffectAdjustScale);
 
 	Vector3 player_forward = player.GetPlayerModel()->GetFrontVector();

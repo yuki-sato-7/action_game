@@ -12,7 +12,7 @@
  * @brief　プレイヤークラスを初期化する
  * @return 常にtrue
  */
-bool Player::Initialize()
+bool Player::Initialize(EnemyManager& enemy_manager)
 {
 	//プレイヤーモデルの設定
 	player_       = GraphicsDevice.CreateAnimationModelFromFile(_T("player/player.X"));
@@ -69,7 +69,13 @@ bool Player::Initialize()
 	player_->SetTrackLoopMode(DEATHBLOW, AnimationLoopMode_Once);
 	player_->SetTrackLoopMode(DEATHBLOW_BACK, AnimationLoopMode_Once);
 	player_->SetTrackLoopMode(DAMAGE, AnimationLoopMode_Once);
+	player_->SetTrackLoopMode(STEP, AnimationLoopMode_Once);
 
+	//オブザーバーに追加
+	time_manager().AddObserver(this);
+	ui_manager().AddObserver(this);
+	enemy_manager.AddObserver(this);
+	
 	//各変数の初期化
 	SetPlayerState(WAIT);
 	player_state_    = WAIT;
@@ -87,10 +93,9 @@ bool Player::Initialize()
 	damage_flag_       = false;
 	death_flag_        = false;
 	operation_flag_    = false;
-	game_over_flag_    = false;
 	deathblow_ef_flag_ = false;
+	game_clear_flag_   = false;
 	
-
 	return true;
 }
 
@@ -113,7 +118,7 @@ void Player::Update(Ground& ground, CameraMain& camera_main, EnemyManager& enemy
 
 	//ステージのモデル
 	ground_ = ground.GetModel();
-	ground_wall_ = ground.GetModelWall();
+	ground_wall_ = ground.GetCollisionModelWall();
 
 	//地面の凹凸判定
 	ground_->IntersectRay(anime_pos_ + Vector3(0, kAdjustGroundDistRay, 0), Vector3_Down, &dist_);
@@ -134,8 +139,6 @@ void Player::Update(Ground& ground, CameraMain& camera_main, EnemyManager& enemy
 	angle_ = MathHelper_Atan2(-float(pad_state.X - Axis_Center) / float(Axis_Max - Axis_Center),
 		float(pad_state.Y - Axis_Center) / float(Axis_Max - Axis_Center));
 
-	//壁の法線ベクトル
-	Vector3 N;
 	//進行ベクトル
 	Vector3 F = player_->GetFrontVector();
 
@@ -143,10 +146,10 @@ void Player::Update(Ground& ground, CameraMain& camera_main, EnemyManager& enemy
 	wall_dist_1_ = FLT_MAX;
 	Vector3 vec;
 	wall_dist_2_= FLT_MAX;
-	Vector3 vec3;
+	Vector3 vec2;
 
 	ground_wall_->IntersectRay(anime_pos_ + Vector3(0, kAdjustGroundDistPosY, 0) - player_->GetRightVector(), F, &wall_dist_1_, &vec);
-	ground_wall_->IntersectRay(anime_pos_ + Vector3(0, kAdjustGroundDistPosY, 0) + player_->GetRightVector(), F, &wall_dist_2_, &vec3);
+	ground_wall_->IntersectRay(anime_pos_ + Vector3(0, kAdjustGroundDistPosY, 0) + player_->GetRightVector(), F, &wall_dist_2_, &vec2);
 
 	Vector3 vec_x;
 	if (wall_dist_1_ <= wall_dist_2_) {
@@ -155,11 +158,11 @@ void Player::Update(Ground& ground, CameraMain& camera_main, EnemyManager& enemy
 	}
 	else {
 		wall_dist_min_ = wall_dist_2_;
-		vec_x = vec3;
+		vec_x = vec2;
 	}
 
 	wall_dist_3_ = FLT_MAX;
-	Vector3 vec2;
+	Vector3 vec3;
 
 
 	//壁との壁ズリ
@@ -171,7 +174,7 @@ void Player::Update(Ground& ground, CameraMain& camera_main, EnemyManager& enemy
 		parallel_vec_ = F + a * vec_x;
 		//壁ずりの速度を設定
 		if (player_state_ == WALK || player_state_ == RUN || player_state_ == DASH) {
-			ground_wall_->IntersectRay(anime_pos_, parallel_vec_, &wall_dist_3_, &vec2);
+			ground_wall_->IntersectRay(anime_pos_, parallel_vec_, &wall_dist_3_, &vec3);
 			if (wall_dist_3_ > kAdjustGroundWallMaxDist) {
 				anime_pos_ += parallel_vec_ * kAdjustGroundWallSpeed;
 			}
@@ -196,54 +199,56 @@ void Player::Update(Ground& ground, CameraMain& camera_main, EnemyManager& enemy
 	float enemy_distx1_ = FLT_MAX;
 	float enemy_distx2_ = FLT_MAX;
 
-	auto& enemys = enemy_manager.GetEnemys(); //エネミーオブジェクトをもらう　配列を取得
-	auto enemys_it = enemys.begin();  //エネミーを先頭から調べる
-	while (enemys_it != enemys.end()) {
+	if (player_state_ != DAMAGE) {
+		auto& enemys = enemy_manager.GetEnemys(); //エネミーオブジェクトをもらう　配列を取得
+		auto enemys_it = enemys.begin();  //エネミーを先頭から調べる
+		while (enemys_it != enemys.end()) {
 
-		if ((*enemys_it)->GetEnemyState() != WEAK_DAMAGE && (*enemys_it)->GetEnemyState() != HEAVY_DAMAGE) {                //倒れている敵とは壁ズリをしない
+			if ((*enemys_it)->GetEnemyState() != WEAK_DAMAGE && (*enemys_it)->GetEnemyState() != HEAVY_DAMAGE) {                //倒れている敵とは壁ズリをしない
 
-			(*enemys_it)->GetHitModel()->IntersectRay(anime_pos_ + Vector3(0, kAdjustEnemyWallDistPosY1, 0), front, &enemy_dist1_, &normal_vector1_);
-			(*enemys_it)->GetHitModel()->IntersectRay(anime_pos_ + Vector3(0, kAdjustEnemyWallDistPosY2, 0), front, &enemy_dist2_, &normal_vector2_);
+				(*enemys_it)->GetHitModel()->IntersectRay(anime_pos_ + Vector3(0, kAdjustEnemyWallDistPosY1, 0), front, &enemy_dist1_, &normal_vector1_);
+				(*enemys_it)->GetHitModel()->IntersectRay(anime_pos_ + Vector3(0, kAdjustEnemyWallDistPosY2, 0), front, &enemy_dist2_, &normal_vector2_);
 
-			if (enemy_dist2_ < enemy_dist1_) {
-				enemy_dist1_    = enemy_dist2_;
-				normal_vector1_ = normal_vector2_;
-			}
+				if (enemy_dist2_ < enemy_dist1_) {
+					enemy_dist1_ = enemy_dist2_;
+					normal_vector1_ = normal_vector2_;
+				}
 
-			//敵との壁ズリ
-			if (enemy_dist1_ < kAdjustEnemydWallMaxDist) {
-				wall_bolck_ = true;
-				// 内積を求める
-				float  a = Vector3_Dot(-front, normal_vector1_);
-				//敵に平行なベクトルを求める
-				Vector3  p = front + a * normal_vector1_;
-				//壁ずりの速度を設定
-				if (player_state_ == WALK || player_state_ == RUN || player_state_ == DASH || player_state_ == DAMAGE) {
-					//壁ズリ中の判定
-					(*enemys_it)->GetHitModel()->IntersectRay(anime_pos_ + Vector3(0, kAdjustEnemyWallDistPosY1, 0), front, &enemy_distx1_, &normal_vectorx1_);
-					(*enemys_it)->GetHitModel()->IntersectRay(anime_pos_ + Vector3(0, kAdjustEnemyWallDistPosY2, 0), front, &enemy_distx2_, &normal_vectorx2_);
+				//敵との壁ズリ
+				if (enemy_dist1_ < kAdjustEnemydWallMaxDist) {
+					wall_bolck_ = true;
+					// 内積を求める
+					float  a = Vector3_Dot(-front, normal_vector1_);
+					//敵に平行なベクトルを求める
+					Vector3  p = front + a * normal_vector1_;
+					//壁ずりの速度を設定
+					if (player_state_ == WALK || player_state_ == RUN || player_state_ == DASH || player_state_ == DAMAGE) {
+						//壁ズリ中の判定
+						(*enemys_it)->GetHitModel()->IntersectRay(anime_pos_ + Vector3(0, kAdjustEnemyWallDistPosY1, 0), front, &enemy_distx1_, &normal_vectorx1_);
+						(*enemys_it)->GetHitModel()->IntersectRay(anime_pos_ + Vector3(0, kAdjustEnemyWallDistPosY2, 0), front, &enemy_distx2_, &normal_vectorx2_);
 
-					if (enemy_distx2_ < enemy_distx1_) {
-						enemy_distx1_ = enemy_distx2_;
-						normal_vectorx1_ = normal_vectorx2_;
+						if (enemy_distx2_ < enemy_distx1_) {
+							enemy_distx1_ = enemy_distx2_;
+							normal_vectorx1_ = normal_vectorx2_;
+						}
+
+						if (enemy_distx1_ > kAdjustEnemyMinxDist) {
+							anime_pos_ += p * kAdjustGroundWallSpeed;    //壁ズリ方向
+						}
+						player_->SetPosition(anime_pos_);
 					}
-
-					if (enemy_distx1_ > kAdjustEnemyMinxDist) {
-						anime_pos_ += p * kAdjustGroundWallSpeed;    //壁ズリ方向
-					}
-					player_->SetPosition(anime_pos_);
+				}
+				else {
+					wall_bolck_ = false;
 				}
 			}
-			else {
-				wall_bolck_ = false;
-			}
+			enemys_it++;
 		}
-		enemys_it++;
 	}
 
 	switch (player_state_) {
 	case DASH:
-		DashState(camera_main,pad_buffer,pad_state);
+		DashState(camera_main, pad_buffer, pad_state);
 		break;
 
 	case DAMAGE:
@@ -267,31 +272,39 @@ void Player::Update(Ground& ground, CameraMain& camera_main, EnemyManager& enemy
 		break;
 
 	case DEATH:
-		DeathState();
+		DeathState(enemy_manager);
 		break;
-	
+
 	case DEATHBLOW:
 		DeathblowState();
 		break;
-	
+
 	case DEATHBLOW_BACK:
 		DeathblowBackState();
 		break;
 
 	case STEP:
-		StepState();
+		StepState(ground);
+		break;
+
+	case TIME_OVER:
+		operation_flag_ = true;
+		ui_manager().AllDelteObserver(this);
+		time_manager().AllDelteObserver(this);
+		enemy_manager.AllDelteObserver(this);
+		SetPlayerState(WAIT);
 		break;
 	}
 
-	//HPゲージが０の時にDEATH状態に遷移
-	if (Ui_manager().GetDeathFlag() == true) {
-		SetPlayerState(DEATH);
-		death_flag_ = true;
+	if(game_clear_flag_ == true){
+		ui_manager().AllDelteObserver(this);
+		time_manager().AllDelteObserver(this);
+		enemy_manager.AllDelteObserver(this);
 	}
 
 	//spゲージの回復
 	if (player_state_ != DEATHBLOW && player_state_ != DEATHBLOW_BACK) {
-		Ui_manager().SpGaugeUp();
+		ui_manager().SpGaugeUp();
 	}
 
 	PlayerMoveSwitch(camera_main, pad_buffer, pad_state);
@@ -301,11 +314,6 @@ void Player::Update(Ground& ground, CameraMain& camera_main, EnemyManager& enemy
 	AttackAreaControl();
 
 	InvincibleTime();
-
-	if (time_manager().GetTimeLimitOver() == true) {
-		operation_flag_ = true;
-		SetPlayerState(WAIT);
-	}
 }
 
 /**
@@ -361,11 +369,11 @@ void Player::DashState(CameraMain& camera_main, GamePadBuffer& pad_buffer, GameP
 			camera_dir.y = 0;
 			//進行ベクトルを正規化
 			camera_dir = Vector3_Normalize(camera_dir);
-			//正規化したベクトルからカメラの回転行列を取得する（原点から見る
+			//正規化したベクトルからビュー行列を取得する
 			Matrix   mat = Matrix_CreateLookAt(Vector3_Zero, camera_dir, Vector3_Up);
-			//回転行列の逆行列を求める
+			//ビュー行列の逆行列からワールド行列を求める
 			mat = Matrix_Invert(mat);
-			//逆行列からクォータニオン（角度）に変換
+			//ワールド行列からクォータニオン（角度）に変換
 			camer_qt_ = Quaternion_CreateFromRotationMatrix(mat);
 			//カメラの向きにプレイヤーを向かせる
 			player_->SetDirection(camer_qt_);
@@ -386,8 +394,8 @@ void Player::DashState(CameraMain& camera_main, GamePadBuffer& pad_buffer, GameP
 		}
 
 		else if (pad_buffer.IsPressed(GamePad_Button6)) {
-			if (Ui_manager().GetSpGauge() >= sp_max) {
-				Ui_manager().SpGaugeDown();
+			if (ui_manager().GetSpGauge() >= sp_max) {
+				ui_manager().SpGaugeDown();
 				SetPlayerState(DEATHBLOW);
 			}
 		}
@@ -429,11 +437,10 @@ void Player::AttackDashState() {
 			ef_flag_ = false;
 		}
 		hit_judge_ = true;
-		player_->Move(0, ground_dist_ - dist_, pad_angle_ / kAdjustPlayerMove);
 	}
 
 	else if (attackdash_time >= 0 && attackdash_time < kAdjustAttackDashTimeOn) {
-		player_->Move(0, ground_dist_ - dist_, pad_angle_ / kAdjustPlayerMove);
+		player_->Move(0, ground_dist_ - dist_, pad_angle_ / 0.25f);
 		player_hit_flag_ = true;
 		operation_flag_ = true;
 	}
@@ -458,19 +465,24 @@ void Player::AttackDashBackState() {
 /**
  * @brief 回避状態
  */
-void Player::StepState() {
+void Player::StepState(Ground& ground) {
 
 	if (player_state_ != STEP)
 		return;
 
 	auto step_time = player_->GetTrackPosition(STEP);
+	float wall_dist_back;
+	Vector3 back_vec;
+	ground_wall_->IntersectRay(anime_pos_ + Vector3(0, kAdjustGroundDistPosY, 0), -player_->GetFrontVector(), &wall_dist_back, &back_vec);
 
 	if (step_time >= kAdjustStepTimeEnd) {
 		SetPlayerState(WAIT);
 		operation_flag_ = false;
 	}
 	else if (step_time > (0.0 / 60.0) && step_time <= kAdjustStepTimeMove) {
-		player_->Move(0, 0, kAdjustStepMoveZ);
+		if (wall_dist_back >= kAdjustGroundWallMaxDist) {
+			player_->Move(0, 0, kAdjustStepMoveZ);
+		}
 		operation_flag_ = true;
 	}
 }
@@ -485,22 +497,22 @@ void Player::AttackWaitState() {
 
 	auto attack_time = player_->GetTrackPosition(ATTACK_WAIT);
 
-	if (attack_time >= kAdjustAttakWaitTimeEnd) {
+	if (attack_time >= kAdjustAttackWaitTimeEnd) {
 			SetPlayerState(ATTACK_WAITBACK);
 			hit_judge_ = false;
 			ef_flag_ = true;
 			operation_flag_ = false;
 	}
 
-	else if (attack_time >= kAdjustAttakWaitTimeOff && attack_time < kAdjustAttakWaitTimeEnd) {
+	else if (attack_time >= kAdjustAttackWaitTimeOff && attack_time < kAdjustAttackWaitTimeEnd) {
 		player_hit_flag_ = false;
 	}
 
-	else if (attack_time >= kAdjustAttakWaitTimeReserve && attack_time < kAdjustAttakWaitTimeOn) {
-		player_->Move(0, 0, kAdjustAttakWaitMoveZ);
+	else if (attack_time >= kAdjustAttackWaitTimeReserve && attack_time < kAdjustAttackWaitTimeOn) {
+		player_->Move(0, 0, kAdjustAttackWaitMoveZ);
 	}
 
-	else if (attack_time < kAdjustAttakWaitTimeReserve) {
+	else if (attack_time < kAdjustAttackWaitTimeReserve) {
 
 		if (ef_flag_ == true) {
 			effectmanager().SlashEffectPlay(*this);
@@ -540,6 +552,8 @@ void Player::AttackWaitBackState() {
  */
 void Player::PlayerDamageSwitch(Vector3& knockbackVector, std::shared_ptr<Enemy> enemy) {
 	enemy_front_ = knockbackVector;
+	enemy_front_.y = 0;
+	enemy_front_ = Vector3_Normalize(enemy_front_);
 	enemy_ = enemy;
 	damage_flag_ = true;
 	operation_flag_ = true;
@@ -554,10 +568,10 @@ void Player::DamageState() {
 	if (player_state_ != DAMAGE)
 		return;
 
-	Ui_manager().DamageHpCount();
+	ui_manager().DamageHpCount();
 	auto attack_damage_time = player_->GetTrackPosition(DAMAGE);
 
-	if (attack_damage_time >= kAdjustAttakDamageTimeEnd) {
+	if (attack_damage_time >= kAdjustAttackDamageTimeEnd) {
 		SetPlayerState(WAIT);
 		operation_flag_ = false;
 	}
@@ -574,12 +588,12 @@ void Player::PlayerMoveSwitch(CameraMain& camera_main, GamePadBuffer& pad_buffer
 	if (death_flag_ == false) {
 		if (enemy_ != nullptr) {
 			if (enemy_->GetAttackFlag() == true && player_state_ == DAMAGE) {
-				anime_pos_ += enemy_front_ * -kAdjustAttakDamageMove;
+				anime_pos_ += enemy_front_ * -kAdjustAttackDamageMove;
 				player_->SetPosition(anime_pos_);
 			}
 
 			else if (enemy_->GetAttackFlag() == true && player_state_ == WAIT) {
-				anime_pos_ += enemy_front_ * -kAdjustAttakDamageMove;
+				anime_pos_ += enemy_front_ * -kAdjustAttackDamageMove;
 				player_->SetPosition(anime_pos_);
 				if (pad_y_y_ != 0 || pad_x_x_ != 0) {
 					enemy_ = nullptr;
@@ -600,7 +614,7 @@ void Player::PlayerMoveSwitch(CameraMain& camera_main, GamePadBuffer& pad_buffer
 			}
 
 			else if (enemy_->GetEnemyState() == PUNCH) {
-				anime_pos_ += enemy_front_ * -kAdjustAttakDamageMove;
+				anime_pos_ += enemy_front_ * -kAdjustAttackDamageMove;
 				player_->SetPosition(anime_pos_);
 			}
 
@@ -613,8 +627,7 @@ void Player::PlayerMoveSwitch(CameraMain& camera_main, GamePadBuffer& pad_buffer
 
 			if (operation_flag_ == false) {
 
-				if (player_state_ != DEATHBLOW && player_state_ != DEATHBLOW_BACK && player_state_ != DASH && player_state_ != ATTACK_WAIT && player_state_ != ATTACK_DASH &&
-					player_state_ != STEP && player_state_ != ATTACK_WAITBACK && player_state_ != ATTACK_DASHBACK) {
+				if (player_state_ != DEATHBLOW &&  player_state_ != ATTACK_DASH && player_state_ != DEATHBLOW_BACK && player_state_ != STEP ) {
 					//スティックを倒している場合
 					if (pad_y_y_ != 0 || pad_x_x_ != 0) {
 						//カメラの進行ベクトル取得
@@ -624,11 +637,11 @@ void Player::PlayerMoveSwitch(CameraMain& camera_main, GamePadBuffer& pad_buffer
 						camera_dir.y = 0;
 						//進行ベクトルを正規化
 						camera_dir = Vector3_Normalize(camera_dir);
-						//正規化したベクトルからカメラの回転行列を取得する
+						//正規化したベクトルからカメラ行列を取得する
 						Matrix   mat = Matrix_CreateLookAt(Vector3(0, 0, 0), camera_dir, Vector3_Up);
-						//回転行列の逆行列を求める
+						//カメラ行列の逆行列からビュー行列を求める
 						mat = Matrix_Invert(mat);
-						//逆行列からクォータニオン（角度）に変換
+						//ビュー行列からクォータニオン（角度）に変換
 						camer_qt_ = Quaternion_CreateFromRotationMatrix(mat);
 						//カメラの向きにプレイヤーを向かせる
 						player_->SetDirection(camer_qt_);
@@ -652,7 +665,7 @@ void Player::PlayerMoveSwitch(CameraMain& camera_main, GamePadBuffer& pad_buffer
 					else {
 						if (wall_bolck_ == false && ground_block_ == false) {
 							player_->Move(0, 0, pad_angle_ / kAdjustPlayerRunMove);
-							player_->Move(0, ground_dist_ - dist_, 0);
+							/*player_->Move(0, ground_dist_ - dist_, 0);*/
 						}
 						SetPlayerState(RUN);
 					}
@@ -667,8 +680,8 @@ void Player::PlayerMoveSwitch(CameraMain& camera_main, GamePadBuffer& pad_buffer
 						}
 
 						else if (pad_buffer.IsPressed(GamePad_Button6)) {
-							if (Ui_manager().GetSpGauge() >= sp_max) {
-								Ui_manager().SpGaugeDown();
+							if (ui_manager().GetSpGauge() >= sp_max) {
+								ui_manager().SpGaugeDown();
 								SetPlayerState(DEATHBLOW);
 							}
 						}
@@ -693,17 +706,16 @@ void Player::PlayerMoveSwitch(CameraMain& camera_main, GamePadBuffer& pad_buffer
 /**
  * @brief 死亡状態
  */
-void Player::DeathState() {
+void Player::DeathState(EnemyManager& enemy_manager) {
 	if (player_state_ != DEATH)
 		return;
 
-	auto death_damage_time = player_->GetTrackPosition(DEATH);	
+	auto death_damage_time = player_->GetTrackPosition(DEATH);
+	ui_manager().AllDelteObserver(this);
+	time_manager().AllDelteObserver(this);
+	enemy_manager.AllDelteObserver(this);
+	death_flag_ = true;
 	operation_flag_ = true;
-
-	if (death_damage_time >= kAdjustDeathTimeEnd) {
-		game_over_flag_ = true;
-		result_manager().SetGameOverFlag();
-	}
 }
 
 /**

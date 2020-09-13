@@ -21,10 +21,10 @@ public:
 	MODEL GetModel() { return ground_; }
 
 	//!壁ズリ判定用のモデルの取得
-	MODEL GetModelWall() { return ground_wall_; }
+	MODEL GetCollisionModelWall() { return collision_ground_wall_; }
 
 	//!壁モデルの取得
-	MODEL GetModelWall2() { return ground_wall2_; }
+	MODEL GetModelWall() { return ground_wall_; }
 
 private:
 
@@ -32,10 +32,10 @@ private:
 	MODEL ground_;
 
 	//!壁ズリ判定用の壁モデル
-	MODEL ground_wall_;
+	MODEL collision_ground_wall_;
 
 	//!壁のモデル
-	MODEL ground_wall2_;
+	MODEL ground_wall_;
 };
 
 

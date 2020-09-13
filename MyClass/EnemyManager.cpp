@@ -35,7 +35,7 @@ void EnemyManager::Update(Player& player, Ground& ground)
 	}
 
 	if (enemy_vector_.size() == 0) {
-		result_manager().SetGameClearFlag();
+		game_clear_subject_.notifyObservers(GAME_CLEAR_STATE);  //ゲームクリアになったことをオブザーバーに通知
 	}
 }
 

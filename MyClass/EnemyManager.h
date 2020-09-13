@@ -9,9 +9,10 @@
 
 #include "ESGLib.h"
 #include "Enemy.h"
-#include "ResultManager.h"
 #include <vector>
 #include <memory>
+#include "Observer.h"
+#include "Enum.h"
 
 class EnemyManager
 {
@@ -42,10 +43,39 @@ public:
 	 */
 	void CreateEnemy(Player& player ,Vector3& enemy_pos);
 
+	/**
+　　 * @brief オブザーバーに新たなオブザーバーを追加
+	 * @param[in] (notify) オブザーバーの通知内容
+ 　　*/
+	void AddObserver(IObserver* observer)
+	{
+		game_clear_subject_.addObserver(observer);
+	}
+
+	/**
+　　 * @brief オブザーバーのリストからオブザーバーを削除
+	 * @param[in] (notify) オブザーバーの通知内容
+ 　　*/
+	void RemoveObserver(IObserver* observer)
+	{
+		game_clear_subject_.removeObserver(observer);
+	}
+
+	/**
+　　 * @brief リストに登録されているオブザーバーの変化を通知
+	 * @param[in] (notify) オブザーバーの通知内容
+ 　　*/
+	void AllDelteObserver(IObserver* observer)
+	{
+		game_clear_subject_.alldelteObservers();
+	}
+
 	//敵の情報取得
 	std::vector< std::shared_ptr<Enemy> >& GetEnemys() { return enemy_vector_; }
 
 private:
 	//! 敵の情報
 	std::vector< std::shared_ptr<Enemy> > enemy_vector_;
+
+	Subject game_clear_subject_;
 };

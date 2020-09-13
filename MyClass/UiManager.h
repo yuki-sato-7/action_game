@@ -7,6 +7,7 @@
 #pragma once
 #include "ESGLib.h"
 #include "Enum.h"
+#include "Observer.h"
 
 
 class UiManager
@@ -45,10 +46,37 @@ public:
 	void SpGaugeDown();
 
 	//HPが0になったか判断
-	bool GetDeathFlag() { return death_flag; };
+	bool GetDeathFlag() { return death_flag_; };
 
 	//SPゲージの残量を取得する
 	float GetSpGauge() { return sp_; };
+
+	/**
+　　 * @brief オブザーバーに新たなオブザーバーを追加
+	 * @param[in] (observer) オブザーバーの通知内容
+ 　　*/
+	void AddObserver(IObserver* observer)
+	{
+		game_over_subject_.addObserver(observer);
+	}
+
+	/**
+　　 * @brief オブザーバーのリストからオブザーバーを削除
+	 * @param[in] (observer) オブザーバーの通知内容
+ 　　*/
+	void RemoveObserver(IObserver* observer)
+	{
+		game_over_subject_.removeObserver(observer);
+	}
+
+	/**
+　　 * @brief リストに登録されているオブザーバーの変化を通知
+	 * @param[in] (notify) オブザーバーの通知内容
+ 　　*/
+	void AllDelteObserver(IObserver* observer)
+	{
+		game_over_subject_.alldelteObservers();
+	}
 
 	// シングルトンインスタンスの取得
 	static UiManager& GetInstance()
@@ -69,51 +97,53 @@ private:
 	const float kAdjustSpGaugeMax       = 319.0f;                         //SPゲージのMAX値
 	const float kAdjustSpGaugeMoveSpeed = 0.5f;                           //SPゲージの回復量調整
 
-	const Vector3 kAdjustHpGaugeBarPos  = Vector3(12.0f, 10.0f, 0.0f);    //HPゲージ(元）の座標調整
-	const Vector3 kAdjustHpGaugePos     = Vector3(95.0f, 14.0f, 0.0f);    //HPゲージの座標調整
-	const float kAdjustHpGaugeRectB     = 23.0f;                          //HPゲームのRECT座標調整
-	const Vector3 kAdjustSpGaugeBarPos  = Vector3(12.0f, 50.0f, 0.0f);    //SPゲージ(元）の座標調整
+	const Vector3 kAdjustHpGaugeBarPos  = Vector3(12.0f, 10.0f, 0.0f);    //HPゲージ(枠）の座標調整
+	const Vector3 kAdjustHpGaugePos     = Vector3(95.0f, 15.0f, 0.0f);    //HPゲージの座標調整
+	const float   kAdjustHpGaugeRectB   = 23.0f;                          //HPゲームのRECT座標調整
+	const Vector3 kAdjustSpGaugeBarPos  = Vector3(12.0f, 50.0f, 0.0f);    //SPゲージ(枠）の座標調整
 	const Vector3 kAdjustSpGaugePos     = Vector3(95.0f, 57.0f, 0.0f);    //SPゲージの座標調整
-	const float kAdjustSpGaugeRectB     = 19.0f;                          //SPゲームのRECT座標調整
+	const float   kAdjustSpGaugeRectB   = 19.0f;                          //SPゲームのRECT座標調整
 
 	//!HPゲージ（枠）の画像
 	SPRITE gauge_bar_;
 
 	//!HPゲージ（黄）の画像
-	SPRITE yellow_gauge;
+	SPRITE yellow_gauge_;
 
 	//!HPゲージ（緑）の画像
-	SPRITE green_gauge;
+	SPRITE green_gauge_;
 
 	//!HPゲージ（赤）の画像
-	SPRITE red_gauge;
+	SPRITE red_gauge_;
 
 	//!SPゲージ（枠）の画像
-	SPRITE sp_bar;
+	SPRITE sp_bar_;
 
 	//!SPゲージ（青）の画像
-	SPRITE sp_gauge;
+	SPRITE sp_gauge_;
 
 	//!HPゲージ（黄）の最大値
-	float yellow_x;
+	float yellow_x_;
 
 	//!HPゲージ（赤）の最大値
-	float red_x;
+	float red_x_;
 
 	//!HPゲージ（緑）の最大値
-	float green_x;
+	float green_x_;
 
 	//!HPゲージの状態
-	int hp_state;
+	int hp_state_;
 
 	//!HPを1度のみ減少させる
-	bool hp_count_flag;
+	bool hp_count_flag_;
 
 	//ゲームオーバーになったか判断
-	bool death_flag;
+	bool death_flag_;
 
 	//!SPゲージの最大値
 	float sp_;
+
+	Subject game_over_subject_;
 
 
 	UiManager() {} //コントラクター
@@ -122,4 +152,4 @@ private:
 	UiManager& operator=(const UiManager&);
 };
 
-inline UiManager& Ui_manager() { return UiManager::GetInstance(); }
+inline UiManager& ui_manager() { return UiManager::GetInstance(); }

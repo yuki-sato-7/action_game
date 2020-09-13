@@ -15,8 +15,9 @@ class CameraMain;
 #include "UiManager.h"
 #include "TimeManager.h"
 #include "Enum.h"
+#include "Observer.h"
 
-class Player
+class Player : public IObserver
 {
 public:
 
@@ -24,17 +25,17 @@ public:
  　　* @brief　プレイヤークラスを初期化する
  　　* @return 常にtrue
  　　*/
-	virtual bool Initialize();
+	virtual bool Initialize(EnemyManager& enemy_manager);
 
 	/**
- 　　*  * @brief 更新(移動、状態遷移、衝突検出、壁ズリ、無敵状態)
+ 　　* @brief 更新(移動、状態遷移、衝突検出、壁ズリ、無敵状態)
  　　* @param[in] (ground) 背景ステージクラス
  　　* @param[in] (camera_main) カメラクラス
  　　* @param[in] (enemy_manager) 敵管理クラス
  　　* @param[in] (pad_buffer) ゲームパッドの状態取得情
  　　* @param[in] (pad_state) ゲームパッドの状態取得
  　　*/
-	virtual void Update(Ground& ground,CameraMain& camera_main, EnemyManager& em, GamePadBuffer&pad_buffer,GamePadState&pad_state);
+	virtual void Update(Ground& ground,CameraMain& camera_main, EnemyManager& enemy_manager, GamePadBuffer&pad_buffer,GamePadState&pad_state);
 	
 	/**
  　　* @brief プレイヤーを描画
@@ -50,7 +51,7 @@ public:
 	/**
      * @brief 回避状態
      */
-	void StepState();
+	void StepState(Ground& ground);
 
 	/**
 　　 * @brief ダッシュ状態
@@ -88,7 +89,7 @@ public:
 	/**
      * @brief 死亡状態
      */
-	void DeathState();
+	void DeathState(EnemyManager& enemy_manager);
 
 	/**
      * @brief 必殺技状態
@@ -116,7 +117,7 @@ public:
 	void PlayerMoveSwitch(CameraMain& camera_main, GamePadBuffer& pad_buffer, GamePadState& pad_state);
 
 	/**
- 　　* @brief プレイヤーの衝突範囲を設定する
+ 　　* @brief プレイヤーの衝突範囲を設定する	
  　　*/
 	void HitAreaControl();
 
@@ -154,20 +155,39 @@ public:
 	//敵の攻撃が当たっているか
 	bool GetDamageFlag() { return damage_flag_; };
 
-	//ゲームオーバー状態か
-	bool GameOverFlag() { return game_over_flag_; };
-
 	//ゲーム終了状態か
 	bool GameEndFlag() { return operation_flag_; };
+
+	//ゲームクリア状態にする
+	void  Player::SetGameClearFlag() {
+		game_clear_flag_ = true;
+	};
 
 	//プレイヤー用の影
 	inline Matrix Create_Shadow_Matrix(const D3DLIGHTTYPE light_type, const Vector3& light,
 		const Vector3& pos, const Vector3& shadow_offset,
 		const Vector3& normal);
 
+	/**
+	 * @brief オブザーバーから通知で状態を切り替える
+	 * @param[in] (notify) オブザーバーからの通知内容
+	 */
+	void ReceiveNotify(int notify) {
+		switch (notify) {
+		case TIME_OVER_STATE:
+			SetPlayerState(TIME_OVER);
+			break;
 
+		case GAME_OVER_STATE:
+			SetPlayerState(DEATH);
+			break;
 
-	float GetDist() { return wall_dist_min_; };
+		case GAME_CLEAR_STATE:
+			SetGameClearFlag();
+			break;
+		}
+	}
+
 
 private:
 	// 定数
@@ -178,7 +198,7 @@ private:
 	const float kAdjustGroundWallMaxDist     = 50.0f;             //壁ズリするMAX距離
 	const float kAdjustEnemydWallMaxDist     = 20.0f;             //壁ズリするMAX距離（敵）
 	const float kAdjustEnemyWallDistPosY1    = 10.0f;             //壁ズリするの距離を測る際のY座標調整
-  	const float kAdjustEnemyWallDistPosY2    = 100.0f;             //壁ズリするの距離を測る際のY座標調整（敵のジャンプ状態で当たるように調整）
+  	const float kAdjustEnemyWallDistPosY2    = 100.0f;            //壁ズリするの距離を測る際のY座標調整（敵のジャンプ状態で当たるように調整）
 	const float kAdjustEnemyMinxDist         = 8.0f;              //壁までの移動できなくなるMIN距離Ｔ（敵）
 	const float kAdjustGroundWallSpeed       = 1.0f;              //壁ズリのスピード
 	const float kAdjustAttackArea            = 25.0f;             //攻撃の座標調整
@@ -197,15 +217,15 @@ private:
 	const float kAdjustStepTimeMove          = (41.0f / 60.0f);   //回避（移動）状態終了時間
 	const float kAdjustStepMoveZ             = -3.0f;             //回避状態移動(Z)
 
-	const float kAdjustAttakWaitTimeEnd      = (41.0f / 60.0f);  //攻撃状態終了時間
-	const float kAdjustAttakWaitTimeOff      = (35.0f / 60.0f);   //攻撃（攻撃無効）時間
-	const float kAdjustAttakWaitTimeOn       = (17.0f / 60.0f);   //攻撃（攻撃有効）時間
-	const float kAdjustAttakWaitTimeReserve  = (8.0f / 60.0f);    //攻撃（準備）時間
-	const float kAdjustAttakWaitMoveZ        = 2.5f;              //攻撃状態移動量調整(Z)
+	const float kAdjustAttackWaitTimeEnd     = (41.0f / 60.0f);  //攻撃状態終了時間
+	const float kAdjustAttackWaitTimeOff     = (35.0f / 60.0f);   //攻撃（攻撃無効）時間
+	const float kAdjustAttackWaitTimeOn      = (17.0f / 60.0f);   //攻撃（攻撃有効）時間
+	const float kAdjustAttackWaitTimeReserve = (8.0f / 60.0f);    //攻撃（準備）時間
+	const float kAdjustAttackWaitMoveZ       = 2.5f;              //攻撃状態移動量調整(Z)
 
-	const float kAdjustAttakDamageTimeEnd    = (60.0f / 60.0f);   //ダメージ状態状態終了時間
+	const float kAdjustAttackDamageTimeEnd   = (60.0f / 60.0f);   //ダメージ状態状態終了時間
 
-	const float kAdjustAttakDamageMove       = 1.5f;              //ダメージ状態で敵の進行方向に移動する量
+	const float kAdjustAttackDamageMove      = 1.5f;              //ダメージ状態で敵の進行方向に移動する量
 
 	const float kAdjustDeathTimeEnd          = (116.0f / 60.0f);  //死亡状態状態終了時間
 	
@@ -311,13 +331,13 @@ private:
 	bool death_flag_;
 
 	//!操作可能か
-	bool operation_flag_;
-
-	//!ゲームオーバーか
-	bool game_over_flag_;
+	bool operation_flag_;	
 
 	//!必殺技エフェクトを表示したか
 	bool deathblow_ef_flag_;
+
+	//!ゲームクリアしたか
+	bool game_clear_flag_;
 
 	//!SPゲージの量
 	float sp_max;

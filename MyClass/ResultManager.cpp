@@ -10,7 +10,7 @@
  * @brief リザルト管理クラスを初期化する
  * @return 常にtrue
  */
-bool ResultManager::Initialize()
+bool ResultManager::Initialize(EnemyManager& enemy_manager)
 {
 	//各画像の読み込み
 	game_over_       = GraphicsDevice.CreateSpriteFromFile(_T("UI/Game Over.png"));
@@ -24,7 +24,11 @@ bool ResultManager::Initialize()
 	time_over_flag_      = false;
 	game_clear_bgm_flag_ = false;
 	game_over_bgm_flag_  = false;
-	alfa_state_          = 0.0f;
+	alpha_state_          = 0.0f;
+
+	time_manager().AddObserver(this);
+	ui_manager().AddObserver(this);
+	enemy_manager.AddObserver(this);
 
 	return true;
 }
@@ -39,6 +43,8 @@ void ResultManager::Update() {
 		if (game_over_bgm_flag_ == false) {
 			se_manager().MainBgmStop();
 			se_manager().GameOverBgmPlay();
+			ui_manager().AllDelteObserver(this);
+			time_manager().AllDelteObserver(this);
 			game_over_bgm_flag_ = true;
 		}
 	}
@@ -47,29 +53,31 @@ void ResultManager::Update() {
 		if (game_clear_bgm_flag_ == false) {
 			se_manager().MainBgmStop();
 			se_manager().GcBgmPlay();
+			ui_manager().AllDelteObserver(this);
+			time_manager().AllDelteObserver(this);
 			game_clear_bgm_flag_ = true;
 		}
 	}
 
-	if (alfa_state_ == ALFA_MAX)
+	if (alpha_state_ == ALPHA_MAX)
 	{
-		alfa_clear_ -= kAdjustAlfaChange_;
+		alpha_clear_ -= kAdjustAlphaChange_;
 
-		if (alfa_clear_ <= 0.0f)
+		if (alpha_clear_ <= 0.0f)
 		{
-			alfa_clear_ = 0.0f;
-			alfa_state_ = ALFA_MIN;
+			alpha_clear_ = 0.0f;
+			alpha_state_ = ALPHA_MIN;
 		}
 	}
 	//アルファ増やす
-	if (alfa_state_ == ALFA_MIN)
+	if (alpha_state_ == ALPHA_MIN)
 	{
-		alfa_clear_ += kAdjustAlfaChange_;
+		alpha_clear_ += kAdjustAlphaChange_;
 
-		if (alfa_clear_ >= kAdjustAlfaMAX)
+		if (alpha_clear_ >= kAdjustAlphaMax)
 		{
-			alfa_clear_ = kAdjustAlfaMAX;
-			alfa_state_ = ALFA_MAX;
+			alpha_clear_ = kAdjustAlphaMax;
+			alpha_state_ = ALPHA_MAX;
 		}
 	}		
 }
@@ -82,18 +90,18 @@ void ResultManager::Draw()
 {
 	if (game_over_flag_ == true) {
 		SpriteBatch.Draw(*game_over_,     Vector3_Zero);
-		SpriteBatch.Draw(*return_button_, Vector3_Zero, alfa_clear_);
+		SpriteBatch.Draw(*return_button_, Vector3_Zero, alpha_clear_);
 	}
 
 	else if(game_clear_flag_ == true) {
-		SpriteBatch.Draw(*return_button_, Vector3_Zero, alfa_clear_);
+		SpriteBatch.Draw(*return_button_, Vector3_Zero, alpha_clear_);
 		SpriteBatch.Draw(*game_clear_,    Vector3_Zero);
 		
 	}
 	
 	else if (time_over_flag_ == true) {
 		SpriteBatch.Draw(*time_over_,     Vector3_Zero);
-		SpriteBatch.Draw(*return_button_, Vector3_Zero, alfa_clear_);
+		SpriteBatch.Draw(*return_button_, Vector3_Zero, alpha_clear_);
 	}
 
 }

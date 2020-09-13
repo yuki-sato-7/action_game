@@ -10,23 +10,32 @@ MainScene::~MainScene()
 {
 	//フォントデータの削除
 	RemoveFontResource(_T("Text/CAMELIAB.TTF"));
+
+	MediaManager.ReleaseAllMedia();
+
+	GraphicsDevice.ReleaseAllRenderTargets();
+	GraphicsDevice.ReleaseAllStateBlocks();
+	GraphicsDevice.ReleaseAllFonts();
+	GraphicsDevice.ReleaseAllSprites();
+	GraphicsDevice.ReleaseAllAnimationModels();
+	GraphicsDevice.ReleaseAllModels();
+	GraphicsDevice.ReleaseAllVertexBuffers();
+	GraphicsDevice.ReleaseAllEffects();
+
 }
 
 void MainScene::Initialize() {
 
 	//ファイルからフォントを読み込む
-	AddFontResource(_T("Text/CAMELIAB.TTF"));
+	AddFontResource(_T("CAMELIAB.TTF"));
 	time_limit_font_       = GraphicsDevice.CreateSpriteFont(_T("Cameliabold"), 60);
 	game_start_count_font_ = GraphicsDevice.CreateSpriteFont(_T("Cameliabold"), 100);
 
 	//プレイヤークラスの初期化
-	player.Initialize();
+	player.Initialize(enemy);
 	
 	//背景クラスの初期化
 	ground.Initialize();
-
-	//敵クラスの初期化
-	enemy.Initialize();
 
 	//カメラクラスの初期化
 	camera_main.Initialize(player);
@@ -35,31 +44,31 @@ void MainScene::Initialize() {
 	effectmanager().Initialize(camera_main, player);
 
 	//UIクラスの初期化
-	Ui_manager().Initialize();
+	ui_manager().Initialize();
 
 	//時間管理クラスの初期化
 	time_manager().Initialize();
 
 	//敵の生成
-	enemy.CreateEnemy(player,Vector3(-740, 0, 0));
-	enemy.CreateEnemy(player,Vector3(0, 0, 1235));
-	enemy.CreateEnemy(player, Vector3(0, 0, -1235));
-	enemy.CreateEnemy(player, Vector3(1039, 0, 45));
-	enemy.CreateEnemy(player, Vector3(844, 0, 850));
+	enemy.CreateEnemy(player, Vector3(   0, 0, 1235));
+	enemy.CreateEnemy(player, Vector3(   0, 0, -1235));
+	enemy.CreateEnemy(player, Vector3( 839, 0, 45));
+	enemy.CreateEnemy(player, Vector3( 844, 0, 850));
 	enemy.CreateEnemy(player, Vector3(-950, 0, -756));
 	enemy.CreateEnemy(player, Vector3(-925, 0, 788));
-	enemy.CreateEnemy(player, Vector3(755, 0, -942));
-	enemy.CreateEnemy(player, Vector3(370, 0, 400));
+	enemy.CreateEnemy(player, Vector3( 755, 0, -942));
+	enemy.CreateEnemy(player, Vector3( 370, 0, 400));
 	enemy.CreateEnemy(player, Vector3(-370, 0, -300));
-	enemy.CreateEnemy(player, Vector3(370, 0, -400));
+	enemy.CreateEnemy(player, Vector3( 370, 0, -400));
 	enemy.CreateEnemy(player, Vector3(-370, 0, 300));
 
 	//ライトクラスの初期化
 	my_light.Initialize();
 
 	//リザルト画面クラスの初期化
-	result_manager().Initialize();
+	result_manager().Initialize(enemy);
 
+	//メインBGMの再生
 	se_manager().MainBgmPlay();
 
 	//ゲームパットを使用可能にする
@@ -99,7 +108,7 @@ void MainScene::Update() {
 		camera_main.GetCameraPos() += new_pos - old_pos;
 
 		//UIクラスのアップデート
-		Ui_manager().Update();
+		ui_manager().Update();
 
 		//エフェクトクラスのアップデート
 		effectmanager().Update(camera_main);
@@ -110,10 +119,9 @@ void MainScene::Update() {
 		//リザルト画面管理クラスのアップデート
 		result_manager().Update();
 
-
 		//リザルト画面に遷移
 		if (result_manager().GetGameClearFlag() == true ||
-			result_manager().GetGameOverFlag() == true  ||
+			result_manager().GetGameOverFlag() == true ||
 			result_manager().GetTimeOverFlag() == true) {
 			if (pad_buffer_.IsPressed(GamePad_Button8)) {
 				se_manager().GcBgmStop();
@@ -130,7 +138,7 @@ void MainScene::Draw3D() {
 	ground.GetModel()->Draw();
 
 	//背景用モデル描画
-	ground.GetModelWall2()->Draw();
+	ground.GetModelWall()->Draw();
 
 	//敵モデルの描画
 	enemy.Draw();
@@ -166,7 +174,7 @@ void MainScene::Draw2D() {
 	}
 
 	//UIクラスの描画
-	Ui_manager().Draw();
+	ui_manager().Draw();
 
 	//リザルト画面の描画
 	result_manager().Draw();

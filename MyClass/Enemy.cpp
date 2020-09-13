@@ -59,16 +59,19 @@ bool Enemy::Initialize(Player& player,Vector3& enemy_pos_)
 	enemy_->SetTrackLoopMode(PUNCH,  AnimationLoopMode_Once);
 
 	//エネミーの座標
-	enemy_pos_    = enemy_->GetPosition();
+	enemy_pos_  = enemy_->GetPosition();
 
 	//プレイヤーの座標
-	player_pos_   = player.GetPlayerPos();
+	player_pos_ = player.GetPlayerPos();
 
 	//敵をプレイヤーに向かせる
 	float kakudo_ = MathHelper_Atan2(player_pos_.z - enemy_pos_.z, player_pos_.x - enemy_pos_.x);
 	enemy_->SetRotation(0, -kakudo_ - kAdjustEnemyRota, 0);
 
-	
+	//オブザーバーに追加
+	time_manager().AddObserver(this);
+	ui_manager().AddObserver(this);
+
 	//各変数の初期化
 	enemy_state_          = WAITING;	
 	SetEnemyState(MOVE);
@@ -104,7 +107,6 @@ bool Enemy::Initialize(Player& player,Vector3& enemy_pos_)
  */
 void Enemy::Update(Player& player, Ground& ground, EnemyManager& enemy_manager)
 {
-
 	//エネミーの座標
 	enemy_pos_ = enemy_->GetPosition();
 
@@ -118,13 +120,16 @@ void Enemy::Update(Player& player, Ground& ground, EnemyManager& enemy_manager)
 	player_dist_ = Vector3_Distance(player_pos_, enemy_pos_);
 
 	//ステージのモデル取得
-	ground_wall_ = ground.GetModelWall();
+	ground_wall_ = ground.GetCollisionModelWall();
 	ground_ = ground.GetModel();
 
 	//地面の凹凸判定
-	ground_down_dist_ = FLT_MAX;
-	ground_->IntersectRay(enemy_pos_ + Vector3(0, 100.0f, 0), Vector3_Down, &ground_down_dist_);
-	groud_dist_ = kAdjustGroundDist - ground_down_dist_;
+		ground_down_dist_ = FLT_MAX;
+		if (ground_->IntersectRay(Vector3(enemy_pos_.x, kAdjustGroundDist + enemy_pos_.y, enemy_pos_.z), Vector3_Down, &ground_down_dist_))
+			groud_dist_ = kAdjustGroundDist - ground_down_dist_;
+		else {
+			groud_dist_ = 0;
+		}
 
 	//プレイヤーの向いている方向
 	player_angle_ = Vector3_Normalize(player.GetPlayerModel()->GetFrontVector());
@@ -139,51 +144,50 @@ void Enemy::Update(Player& player, Ground& ground, EnemyManager& enemy_manager)
 
 	GroundDist(ground);
 
-	if (result_manager().GetGameClearFlag() == false && result_manager().GetGameOverFlag() == false && result_manager().GetTimeOverFlag() == false) {
+	switch (enemy_state_) {
+	case MOVE:
+		EnemyMove();
+		break;
 
-		switch (enemy_state_) {
-		case MOVE:
-			EnemyMove();
-			break;
+	case PUNCH:
+		PunchState();
+		break;
 
-		case PUNCH:
-			PunchState();
-			break;
+	case WAITING:
+		WaitState(enemy_manager);
+		break;
 
-		case WAITING:
-			WaitState(enemy_manager);
-			break;
+	case SIDE_JUMP:
+		SideJumpState(enemy_manager);
+		break;
 
-		case SIDE_JUMP:
-			SideJumpState(enemy_manager);
-			break;
+	case WEAK_DAMAGE:
+		WeakDamageState();
+		break;
 
-		case WEAK_DAMAGE:
-			WeakDamageState();
-			break;
+	case HEAVY_DAMAGE:
+		HeavyDamageState(enemy_manager);
+		break;
 
-		case HEAVY_DAMAGE:
-			HeavyDamageState(enemy_manager);
-			break;
+	case ATTACK:
+		AttackState(enemy_manager);
+		break;
 
-		case ATTACK:
-			AttackState(enemy_manager);
-			break;
+	case END_WAITING:
+		EndWaitState();
+		break;
 
-		case NORMAL:
-			EnemyNormalSwitch(enemy_manager);
-			break;
-		}
+	case NORMAL:
+		EnemyNormalSwitch(enemy_manager);
+		break;
 
-		PunchAreaControl(enemy_manager);
-
+	case TIME_OVER_:
+	case PLAYER_DEATH_:
+		SetEnemyState(END_WAITING);
+		break;
 	}
 
-	else {
-		SetEnemyState(WAITING);
-	}
-	
-	
+	PunchAreaControl(enemy_manager);
 }
 
 /**
@@ -192,8 +196,8 @@ void Enemy::Update(Player& player, Ground& ground, EnemyManager& enemy_manager)
  */
 void Enemy::PunchAreaControl(EnemyManager& enemy_manager) {
 
-	auto& enemys = enemy_manager.GetEnemys(); //エネミーオブジェクトをもらう　配列を取得
-	auto enemys_it = enemys.begin();  //エネミーを先頭から調べる
+	auto& enemys      = enemy_manager.GetEnemys(); //エネミーオブジェクトをもらう　配列を取得
+	auto enemys_it    = enemys.begin();  //エネミーを先頭から調べる
 	while (enemys_it != enemys.end()) {
 		punch_->SetPosition(enemy_pos_ + enemy_->GetFrontVector() * -kAdjustPunchArea);
 		punch_->SetDirection(enemy_->GetDirectionQuaternion());
@@ -208,7 +212,7 @@ void Enemy::HitAreaControl() {
 	//エネミーの衝突判定領域をアニメーションモデルに合わせる
 	hit_enemy_ob_->SetPosition(enemy_pos_);
 	enemy_obb_.Center = enemy_->GetPosition();
-	Matrix rotation = enemy_->GetDirectionQuaternion();
+	Matrix rotation   = enemy_->GetDirectionQuaternion();
 	enemy_obb_.SetAxis(rotation);
 	hit_enemy_ob_->SetDirection(enemy_->GetDirectionQuaternion());
 	hit_enemy_ob_->SetPosition(enemy_obb_.Center + Vector3(0, kAdjustHitArea, 0));
@@ -237,6 +241,24 @@ void Enemy::WaitState(EnemyManager& enemy_manager)
 
 	if (wait_time >= kAdjustWaitTimeEnd) {
 		SetEnemyState(WAITING);
+	}
+}
+
+/**
+ * @brief　敵が待機状態の際の処理
+ * @param[in] (enemy_manager) 敵管理クラス
+ */
+void Enemy::EndWaitState()
+{
+	if (enemy_state_ != END_WAITING)
+		return;
+
+	auto end_wait_time = enemy_->GetTrackPosition(END_WAITING);
+	ui_manager().AllDelteObserver(this);
+	time_manager().AllDelteObserver(this);
+
+	if (end_wait_time >= kAdjustWaitTimeEnd) {
+		SetEnemyState(END_WAITING);
 	}
 }
 
@@ -352,7 +374,6 @@ void Enemy::LeftSideJumpState() {
 
 	else
 		enemy_->Move(0, groud_dist_, 0); 
-
 }
 
 /**
@@ -457,7 +478,6 @@ void Enemy::EnemyNormalSwitch(EnemyManager& enemy_manager)
 		forward_1_dist_ = forward_2_dist_;
 	}
 
-
 	if (forward_1_dist_ < wait_dist_) {
 		SetEnemyState(WAITING);
 	}
@@ -553,7 +573,6 @@ void Enemy::WeakDamageState() {
 			enemy_->Move(0.0f, groud_dist_, 0.0f);
 		}
 	}
-	
 }
 
 /**
@@ -647,10 +666,12 @@ void Enemy::HpManager() {
 
 	enemy_hp_ += kAdjustDamageCount;
 	if (enemy_hp_ > hp_max_) {
-		survival_flag_ = true;
 		death_flag_ = true;
+		time_manager().RemoveObserver(this);     //オブザーバーのリストから消去する
+		ui_manager().RemoveObserver(this);
 		se_manager().ExplosionSePlay();
 		effectmanager().ExplosionPlay(enemy_pos_);	
+		survival_flag_ = true;
 	}
 }
 
@@ -663,10 +684,12 @@ void Enemy::DeathBolwHit() {
 
 	enemy_hp_ += kAdjustDeathBlowDamageCount;
 	if (enemy_hp_ > hp_max_) {
-		survival_flag_ = true;
 		death_flag_ = true;
+		time_manager().RemoveObserver(this);   //オブザーバーのリストから消去する
+		ui_manager().RemoveObserver(this);
 		se_manager().ExplosionSePlay();
 		effectmanager().ExplosionPlay(enemy_pos_);
+		survival_flag_ = true;
 	}
 }
 

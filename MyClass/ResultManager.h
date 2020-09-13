@@ -8,8 +8,12 @@
 #include "ESGLib.h"
 #include "SeManager.h"
 #include "Enum.h"
+#include "TimeManager.h"
+#include "UiManager.h"
+#include "EnemyManager.h"
+#include "Observer.h"
 
-class ResultManager
+class ResultManager : public IObserver
 {
 public:
 
@@ -17,7 +21,7 @@ public:
  　　* @brief リザルト管理クラスを初期化する
 　　 * @return 常にtrue
 　　 */
-	virtual bool Initialize();
+	virtual bool Initialize(EnemyManager& enemy_manager);
 
 	/**
  　　* @brief リザルト管理クラスを描画する
@@ -53,6 +57,26 @@ public:
 		time_over_flag_ = true;
 	};
 
+	/**
+	 * @brief オブザーバーから通知で状態を切り替える
+	 * @param[in] (notify) オブザーバーからの通知内容
+	 */
+	void ReceiveNotify(int notify) {
+		switch (notify) {
+		case TIME_OVER_STATE:
+			SetTimeOverFlag();
+			break;
+
+		case GAME_OVER_STATE:
+			SetGameOverFlag();
+			break;
+
+		case GAME_CLEAR_STATE:
+			SetGameClearFlag();
+			break;
+		}
+	}
+
 	// シングルトンインスタンスの取得
 	static ResultManager& GetInstance()
 	{
@@ -62,8 +86,8 @@ public:
 
 private:
 	//定数
-	const float kAdjustAlfaChange_ = 0.02f;    //文字の透明度の
-	const float kAdjustAlfaMAX     = 1.0f;     //文字の透明度（最大）
+	const float kAdjustAlphaChange_ = 0.02f;    //文字の透明度の
+	const float kAdjustAlphaMax     = 1.0f;     //文字の透明度（最大）
 
 	//!ゲームオーバー画面
 	SPRITE game_over_;
@@ -86,17 +110,17 @@ private:
 	//!タイムオーバー状態か
 	bool time_over_flag_;
 
-	//!ゲームクリア状態か
+	//!ゲームクリアBGMを鳴らしたか
 	bool game_clear_bgm_flag_;
 
-	//!タイムオーバー状態か
+	//!タイムオーバーBGMを鳴らしたか
 	bool game_over_bgm_flag_;
 
 	//!文字の透明度
-	float alfa_clear_;
+	float alpha_clear_;
 
 	//!文字の透明度
-	float alfa_state_;
+	float alpha_state_;
 	
 
 	ResultManager() {} 

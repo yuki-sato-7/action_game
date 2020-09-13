@@ -11,32 +11,36 @@
   * プレイヤーの状態
   */
 enum PLAYER_STATE {
-	//待機モーション
+	//!待機モーション
 	WAIT,
-	//歩きモーション
+	//!歩きモーション
 	WALK,
-	//走りモーション
+	//!走りモーション
 	RUN,
-	//ダッシュモーション
+	//!ダッシュモーション
 	DASH,
-	//ダメージモーション
+	//!ダメージモーション
 	DAMAGE,
-	//攻撃（待機）モーション
+	//!攻撃（待機）モーション
 	ATTACK_WAIT,
-	//攻撃（ダッシュ）モーション
+	//!攻撃（ダッシュ）モーション
 	ATTACK_DASH,
-	//攻撃（待機）戻りモーション
+	//!攻撃（待機）戻りモーション
 	ATTACK_WAITBACK,
-	//攻撃（ダッシュ）戻りモーション
+	//!攻撃（ダッシュ）戻りモーション
 	ATTACK_DASHBACK,
-	//倒れモーション
+	//!倒れモーション
 	DEATH,
-	//必殺技モーション
+	//!必殺技モーション
 	DEATHBLOW,
-	//必殺技戻りモーション
+	//!必殺技戻りモーション
 	DEATHBLOW_BACK,
-	//必殺技戻りモーション
-	STEP
+	//!回避モーション
+	STEP,
+	//!タイムオーバー状態
+	TIME_OVER,
+	//!ゲームクリア状態
+	GAME_CLEAR
 };
 
 /**
@@ -44,7 +48,9 @@ enum PLAYER_STATE {
  * 無敵状態
  */
 enum Player_Invincible {
+	//!無敵状態
 	Invincible,
+	//!非無敵状態
 	Not_invincible
 };
 
@@ -53,38 +59,46 @@ enum Player_Invincible {
  * 敵の状態
  */
 enum Enemy_STATE {
-	//移動モーション
-	MOVE,
-	DA,
-	//パンチモーション
-	PUNCH,
-	//待機モーション
+	//!通常状態
 	WAITING,
-	//パンチモーション
-	SIDE_JUMP,
-	//走りモーション
-	WEAK_DAMAGE,
-	///歩きモーション
-	HEAVY_DAMAGE,
-	//攻撃モーション
+	//!攻撃モーション
 	ATTACK,
-	//必殺技ダメージモーション
-	DEATHBLOW_DAMAGE,
-	BREAK,
-	//NORMAL,
-	NORMAL
+	//!歩きモーション
+	HEAVY_DAMAGE,
+	//!走りモーション
+	WEAK_DAMAGE,
+	//!移動モーション
+	MOVE,
+	//!通常状態
+	END_WAITING,
+	//!パンチモーション
+	PUNCH,
+	//!待機モーション（ゲーム終了）
+	SIDE_JUMP,
+	//!通常状態
+	NORMAL,
+	//!タイムオーバー状態
+	TIME_OVER_,
+	//!プレイヤー死亡状態
+	PLAYER_DEATH_
 };
 
 /**
  * @enum Enum
  * HPゲージの状態
  */
-enum Gauge_STATE {
+enum HpGauge_STATE {
+	//!ダメージ5回
 	RED_1,
+	//!ダメージ4回
 	RED_2,
+	//!ダメージ3回
 	YELLOW_1,
+	//!ダメージ2回
 	YELLOW_2,
+	//!ダメージ1回
 	GREEN_1,
+	//!ダメージ0回
 	GREEN_2
 };
 
@@ -93,6 +107,21 @@ enum Gauge_STATE {
  * 文字の濃度
  */
 enum Alfa_STATE {
-	ALFA_MIN,
-	ALFA_MAX
+	//!文字の透明度0%
+	ALPHA_MIN,
+	//!文字の透明度100%
+	ALPHA_MAX
+};
+
+/**
+ * @enum Enum
+ * Observerの引数
+ */
+enum Observer_STATE {
+	//!タイムオーバー状態
+	TIME_OVER_STATE,
+	//!ゲームオーバー状態
+	GAME_OVER_STATE,
+	//!ゲームクリア状態
+	GAME_CLEAR_STATE,
 };

@@ -87,11 +87,15 @@ public:
 		return effect_manager;
 	}
 
+	//プレイヤーの状態を取得する関数
+	Vector3 GetEff() { return dash_; }
+
+
 private:
 	// 定数
 	const float kEffectAdjustAngle          = 45.0f;    //エフェクトの角度調整
 	const float kEffectAdjustPos            = 60.0f;    //攻撃、ヒットエフェクトの座標調整
-	const float kEffectAdjustDashSlashPos   = 30.0f;    //ダッシュ攻撃の座標調整
+	const float kEffectAdjustDashSlashPos   = 40.0f;    //ダッシュ攻撃の座標調整
 	const float kEffectAdjustScale          = 8.0f;     //攻撃、ヒットエフェクトの大きさ調整
 	const float kEffectAdjustDeathBlowPos   = 30.0f;    //必殺技エフェクトの座標調整
 	const float kEffectAdjustDeathBlowScale = 6.0f;     //必殺技エフェクトの大きさ調整
@@ -120,6 +124,9 @@ private:
 
 	//!エフェクトの向き
 	Vector3 effect_dir_;
+
+	Vector3 dash_;
+	int dash_slash_effect_effect_ID;
 
 
 	EffeksserManager() {} 

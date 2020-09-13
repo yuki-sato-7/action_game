@@ -15,6 +15,8 @@
 
 class TitleScene :public BaseScene {
 public:
+	virtual ~TitleScene();
+
 	void Initialize();
 	void Update();
 	void Draw3D();
@@ -27,10 +29,10 @@ public:
 
 private:
 	// 定数
-	const float kAdjustTittleTime  = 50.0f;    //操作画面に移行する時間調整
-	const float kAdjustTittleState = 1.0f;     //操作画面に移行する状態
-	const float kAdjustAlfaChange_ = 0.02f;    //文字の透明度の
-	const float kAdjustAlfaMAX     = 1.0f;     //文字の透明度（最大）
+	const float kAdjustTittleTime   = 50.0f;    //操作画面に移行する時間調整
+	const float kAdjustTittleState  = 1.0f;     //操作画面に移行する状態
+	const float kAdjustAlphaChange  = 0.01f;    //文字の透明度の変化量調整
+	const float kAdjustAlphaMax     = 1.0f;     //文字の透明度（最大）
 	
 	//!タイトル画面
 	SPRITE tittle_;
@@ -46,7 +48,7 @@ private:
 
 	//!ゲームパットの状態取得
 	GamePadBuffer   pad_buffer_;
-	GamePadState   pad_state_;
+	GamePadState    pad_state_;
 	
 	//!タイトル画面の遷移
 	int tittle_state_;
@@ -61,8 +63,9 @@ private:
 	bool select_se_flag_;
 
 	//!文字の透明度
-	float alfa_clear_;
+	float alpha_clear_;
 
 	//!文字の透明度
-	float alfa_state_;
+	float alpha_state_;
+
 };

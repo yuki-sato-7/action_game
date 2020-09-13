@@ -7,6 +7,8 @@
 #pragma once
 #include "ESGLib.h"
 #include "ResultManager.h"
+#include "Observer.h"
+#include "Enum.h"
 
 class TimeManager
 {
@@ -45,6 +47,33 @@ public:
 	//ゲームスタートか取得する
 	bool GetTimeLimitOver() { return time_limit_over_; };
 
+	/**
+　　 * @brief オブザーバーに新たなオブザーバーを追加
+	 * @param[in] (notify) オブザーバーの通知内容
+ 　　*/
+	void AddObserver(IObserver* observer)
+	{
+		time_over_subject_.addObserver(observer);
+	}
+
+	/**
+　　 * @brief オブザーバーのリストからオブザーバーを削除
+	 * @param[in] (notify) オブザーバーの通知内容
+ 　　*/
+	void RemoveObserver(IObserver* observer)
+	{
+		time_over_subject_.removeObserver(observer);
+	}
+
+	/**
+　　 * @brief リストに登録されているオブザーバーの変化を通知
+	 * @param[in] (notify) オブザーバーの通知内容
+ 　　*/
+	void AllDelteObserver(IObserver* observer)
+	{
+		time_over_subject_.alldelteObservers();
+	}
+
 	static TimeManager& GetInstance()
 	{
 		static TimeManager time_manager;
@@ -67,6 +96,8 @@ private:
 
 	//!制限時間
 	int time_limit_over_;
+
+	Subject time_over_subject_;
 
 	TimeManager() {} 
 

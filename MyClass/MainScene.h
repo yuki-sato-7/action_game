@@ -44,7 +44,7 @@ private:
 
 	//!ゲームパットの状態取得
 	GamePadBuffer   pad_buffer_;
-	GamePadState   pad_state_;
+	GamePadState    pad_state_;
 
 	//!制限時間
 	int timer__;

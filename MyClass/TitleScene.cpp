@@ -13,11 +13,12 @@ void TitleScene::Initialize() {
 	press_start_           = GraphicsDevice.CreateSpriteFromFile(_T("UI/press_start.png"));
 	operation_explanation_ = GraphicsDevice.CreateSpriteFromFile(_T("UI/operation_explanation.png"));
 	operation_button       = GraphicsDevice.CreateSpriteFromFile(_T("UI/main_button.png"));
+	MediaManager.Attach(GraphicsDevice);
 
 	//各変数の初期化
 	tittle_count_   = 0.0f;
 	tittle_state_   = 0.0f;
-	alfa_state_     = 0.0f;
+	alpha_state_     = 0.0f;
 
     next_flag_      = false;
 	select_se_flag_ = false;
@@ -28,10 +29,25 @@ void TitleScene::Initialize() {
 
 }
 
+TitleScene::~TitleScene()
+{
+	MediaManager.ReleaseAllMedia();
+
+	GraphicsDevice.ReleaseAllRenderTargets();
+	GraphicsDevice.ReleaseAllStateBlocks();
+	GraphicsDevice.ReleaseAllFonts();
+	GraphicsDevice.ReleaseAllSprites();
+	GraphicsDevice.ReleaseAllAnimationModels();
+	GraphicsDevice.ReleaseAllModels();
+	GraphicsDevice.ReleaseAllVertexBuffers();
+	GraphicsDevice.ReleaseAllEffects();
+
+}
+
 void TitleScene::Update() {
 
 	//ゲームパットの押した瞬間、押している状態取得
-	pad_state_  = GamePad(0)->GetState();
+	pad_state_ = GamePad(0)->GetState();
 	pad_buffer_ = GamePad(0)->GetBuffer();
 
 	FlashInterval();
@@ -67,13 +83,13 @@ void TitleScene::Draw3D() {
 void TitleScene::Draw2D() {
 
 	if (tittle_state_ == 0) {
-		SpriteBatch.Draw(*tittle_,Vector3_Zero);
-		SpriteBatch.Draw(*press_start_,Vector3_Zero,alfa_clear_);
+		SpriteBatch.Draw(*tittle_, Vector3_Zero);
+		SpriteBatch.Draw(*press_start_, Vector3_Zero, alpha_clear_);
 	}
 
 	else if (tittle_state_ == 1) {
-		SpriteBatch.Draw(*operation_explanation_,Vector3_Zero);
-		SpriteBatch.Draw(*operation_button, Vector3_Zero, alfa_clear_);
+		SpriteBatch.Draw(*operation_explanation_, Vector3_Zero);
+		SpriteBatch.Draw(*operation_button, Vector3_Zero, alpha_clear_);
 	}
 }
 
@@ -82,26 +98,26 @@ void TitleScene::Draw2D() {
  */
 void TitleScene::FlashInterval() {
 
-	if (alfa_state_ == ALFA_MIN)
+	if (alpha_state_ == ALPHA_MIN)
 	{
-		alfa_clear_ -= kAdjustAlfaChange_;
+		alpha_clear_ -= kAdjustAlphaChange;
 
-		if (alfa_clear_ <= 0.0f)
+		if (alpha_clear_ <= 0.0f)
 		{
-			alfa_clear_ = 0.0f;
-			alfa_state_ = ALFA_MAX;
+			alpha_clear_ = 0.0f;
+			alpha_state_ = ALPHA_MAX;
 		}
 	}
+
 	//アルファ増やす
-	if (alfa_state_ == ALFA_MAX)
+	if (alpha_state_ == ALPHA_MAX)
 	{
-		alfa_clear_ += kAdjustAlfaChange_;
+		alpha_clear_ += kAdjustAlphaChange;
 
-		if (alfa_clear_ >= kAdjustAlfaMAX)
+		if (alpha_clear_ >= kAdjustAlphaMax)
 		{
-			alfa_clear_ = kAdjustAlfaMAX;
-			alfa_state_ = ALFA_MIN;
+			alpha_clear_ = kAdjustAlphaMax;
+			alpha_state_ = ALPHA_MIN;
 		}
 	}
-	
 }

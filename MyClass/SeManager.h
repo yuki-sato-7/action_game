@@ -112,7 +112,7 @@ private:
 	MUSIC game_clear_bgm_;
 
 	//!BGM,SE‚ğ“Ç‚İ‚ñ‚¾‚©Šm”F
-	bool read_sound;
+	bool load_sound_;
 
 
 	SeManager() {} 

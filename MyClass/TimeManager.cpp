@@ -8,7 +8,7 @@ bool TimeManager::Initialize()
 {
 	//各変数の初期化
 	start_time_count_ = 3000.0f;
-	time_limit_count_ = 7200.0f;
+	time_limit_count_ = 7200;
 
 	game_start_       = false;
 	time_limit_over_  = false;
@@ -54,8 +54,7 @@ void TimeManager::TimeLimitCount()
 		time_limit_count_ -= kAdjustTimeLimitMove;
 
 		if (time_limit_count_ <= 0) {
-			time_limit_over_ = true;
-			result_manager().SetTimeOverFlag();
+			time_over_subject_.notifyObservers(TIME_OVER_STATE);  //タイムオーバーになったことをオブザーバーに通知
 		}
 	}
 }

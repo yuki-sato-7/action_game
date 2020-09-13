@@ -14,9 +14,12 @@ class Player;
 #include "EnemyManager.h"
 #include "Enum.h"
 #include "EffeksserManager.h"
+#include "TimeManager.h"
+#include "UiManager.h"
+#include "Observer.h"
 
 
-class Enemy
+class Enemy : public IObserver
 {
 public:
 
@@ -26,7 +29,7 @@ public:
  　　* @param[in] (enemy_pos_) メインシーンで設定した敵の座標
  　　* @return 常にtrue
  　　*/
-	virtual bool Initialize(Player& player,Vector3& enemy_pos_);
+	virtual bool Initialize(Player& player,Vector3& enemy_pos);
 
 	/**
 　　 * @brief 更新(移動、状態遷移、衝突検出)
@@ -34,7 +37,7 @@ public:
  　　* @param[in] (ground) 背景座標管理クラス
  　　* @param[in] (enemy_pos_) 敵管理クラス
  　　*/
-	virtual void Update(Player& player,Ground& ground, EnemyManager& em);
+	virtual void Update(Player& player,Ground& ground, EnemyManager& enemy_manager);
 
 	/**
  　　* @brief 待機状態からプレイヤーとの処理を測り、次の状態を決定するための処理
@@ -95,6 +98,12 @@ public:
      * @param[in] (enemy_manager) 敵管理クラス
      */
 	void WaitState(EnemyManager& enemy_manager);
+
+	/**
+	 * @brief　敵が待機状態（ゲーム終了状態）の際の処理
+	 * @param[in] (enemy_manager) 敵管理クラス
+	 */
+	void EndWaitState();
 
 	/**
      * @brief　ダメージを受けた後の、サイドジャンプをするために敵同士の距離を測る処理
@@ -177,6 +186,22 @@ public:
 	//生存しているか
 	bool GetSurvialFlag() { return survival_flag_; }
 
+	/**
+	 * @brief オブザーバーから通知で状態を切り替える
+	 * @param[in] (notify) オブザーバーからの通知内容
+	 */
+	void ReceiveNotify(int notify) {
+		switch (notify) {
+		case TIME_OVER_STATE:
+			SetEnemyState(TIME_OVER_);
+			break;
+
+		case GAME_OVER_STATE:
+			SetEnemyState(PLAYER_DEATH_);
+			break;
+		}
+	}
+
 private:
 	// 定数
 	const float kAdjustAdvanceTimeSpeed     = (1.0f/60.0f);     //アニメーションの再生速度調整
@@ -190,7 +215,7 @@ private:
 	const float kAdjustSideJumpMaxDist      = 800.0f;           //サイドジャンプの際の敵同士の距離
 	const float kAdjustGroundMaxDist        = 300.0f;           //壁までの移動できるMAX距離
 
-	const float kAdjustJumpTimeEnd          = (72.0f/60.0f);    //ジャンプ状態終了時間
+	const float kAdjustJumpTimeEnd          = (72.0f / 60.0f);    //ジャンプ状態終了時間
 	const float kAdjustJumpTimeRise         = (38.0f / 60.0f);  //ジャンプ状態（上昇中）
 	const float kAdjustJumpTimeFall         = (55.0f / 60.0f);  //ジャンプ状態（下降中）
 	const float kAdjustJumpTimeTakeOff      = (22.0f / 60.0f);  //ジャンプ状態（上昇前）

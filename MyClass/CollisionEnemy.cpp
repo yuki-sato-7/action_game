@@ -72,21 +72,23 @@ void CollisionEnemy::Update(EnemyManager& enemy_manager, Player& player)
 	}
 
 	//敵の攻撃判定
-	if (player.GetDamageFlag() == false) {
-		auto& enemys = enemy_manager.GetEnemys(); //エネミーオブジェクトをもらう　配列を取得
-		auto enemys_it = enemys.begin();  //エネミーを先頭から調べる
-		while (enemys_it != enemys.end()) {
-			if ((*enemys_it)->GetEnemyHitFlag() == false) {
-				if ((*enemys_it)->GetAttackFlag() == true) {
-					OrientedBoundingBox player_obb = player.GetPlayerHitArea()->GetOBB(); //剣のオブジェクトをもらう
-					OrientedBoundingBox enemy_obb = (*enemys_it)->GetAttackModel()->GetOBB();
-					if (player_obb.Intersects(enemy_obb)) {
-						player.PlayerDamageSwitch((*enemys_it)->GetEnemyModel()->GetFrontVector(), (*enemys_it));
-						break;
+	if (player.GetPlayerState() != DEATH && player.GetPlayerState() != DEATHBLOW) {
+		if (player.GetDamageFlag() == false) {
+			auto& enemys = enemy_manager.GetEnemys(); //エネミーオブジェクトをもらう　配列を取得
+			auto enemys_it = enemys.begin();  //エネミーを先頭から調べる
+			while (enemys_it != enemys.end()) {
+				if ((*enemys_it)->GetEnemyHitFlag() == false) {
+					if ((*enemys_it)->GetAttackFlag() == true) {
+						OrientedBoundingBox player_obb = player.GetPlayerHitArea()->GetOBB(); //剣のオブジェクトをもらう
+						OrientedBoundingBox enemy_obb = (*enemys_it)->GetAttackModel()->GetOBB();
+						if (player_obb.Intersects(enemy_obb)) {
+							player.PlayerDamageSwitch((*enemys_it)->GetEnemyModel()->GetFrontVector(), (*enemys_it));
+							break;
+						}
 					}
 				}
+				enemys_it++;
 			}
-			enemys_it++;
 		}
 	}
 }

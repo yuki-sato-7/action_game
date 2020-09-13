@@ -14,16 +14,14 @@
 bool SeManager::Initialize()
 {
 	//äeSE,BGMÇÃì«Ç›çûÇ›
-	if (hit_se_ == nullptr) {  //àÍìxì«ÇÒÇæÇÁì«Ç›çûÇ‹Ç»Ç¢
-		hit_se_         = SoundDevice.CreateSoundFromFile(_T("Se/hit_bgm.wav"));
-		punch_se_       = SoundDevice.CreateSoundFromFile(_T("Se/enemy_punch.wav"));
-		explosion_se_   = SoundDevice.CreateSoundFromFile(_T("Se/enmy_explosion.wav"));
-		main_bgm_       = SoundDevice.CreateMusicFromFile(_T("Se/main_bgm.wav"));
-		select_se_      = SoundDevice.CreateSoundFromFile(_T("Se/select_se.wav"));
-		op_bgm_         = SoundDevice.CreateMusicFromFile(_T("Se/op_bgm.wav"));
-		game_over_bgm_  = SoundDevice.CreateMusicFromFile(_T("Se/over_bgm.wav"));
-		game_clear_bgm_ = SoundDevice.CreateMusicFromFile(_T("Se/clear_bgm.wav"));
-	}
+	if (!hit_se_)		    hit_se_         = SoundDevice.CreateSoundFromFile(_T("Se/hit_bgm.wav"));
+	if (!punch_se_)		    punch_se_       = SoundDevice.CreateSoundFromFile(_T("Se/enemy_punch.wav"));
+	if (!explosion_se_)	    explosion_se_   = SoundDevice.CreateSoundFromFile(_T("Se/enmy_explosion.wav"));
+	if (!main_bgm_)	        main_bgm_       = SoundDevice.CreateMusicFromFile(_T("Se/main_bgm.wav"));
+	if (!select_se_)	    select_se_      = SoundDevice.CreateSoundFromFile(_T("Se/select_se.wav"));
+	if (!op_bgm_)	        op_bgm_         = SoundDevice.CreateMusicFromFile(_T("Se/op_bgm.wav"));
+	if (!game_over_bgm_)	game_over_bgm_  = SoundDevice.CreateMusicFromFile(_T("Se/over_bgm.wav"));
+	if (!game_clear_bgm_)	game_clear_bgm_ = SoundDevice.CreateMusicFromFile(_T("Se/clear_bgm.wav"));
 
 	return true;
 }
