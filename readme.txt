@@ -28,6 +28,7 @@
       MyClass
 　　　MECHASLAYER_操作マニュアル.png
 　　　readme.txt
+      アピールポイント動画.mp4
 　　　クラス図.png
       
 
